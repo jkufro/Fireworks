@@ -49,25 +49,40 @@ class moon(object): #moon object
         self.cy = data.height//5
         self.r = 70
         self.path = parabola((self.cx,self.cy),((data.width//2)-100,50),(data.width-150,350))
-        self.speed = .05
+        self.speed = .75
         self.color = "#edece3"
         self.craters = set()
+        self.phases = [[0,0],[0,10],[0,20],[0,30],[0,40],[0,50],[0,60],[0,65],[0,0],[10,0],
+                        [20,0],[30,0],[40,0],[50,0],[60,0],[65,0]]
+        self.phaseIndex = random.randint(0,len(self.phases)-1)
+        self.phase = self.phases[self.phaseIndex]
+        
         for i in range(25): #add random crater objects to the moon surface
             self.craters.add(crater())
 
     def update(self,data):
         self.cx += self.speed
         self.cy = self.path.YPosAtX(self.cx)
-        if self.cx > data.width+100: self.cx = -100  
+        if self.cx > data.width+100: 
+            self.cx = -100  
+            self.phaseIndex = (self.phaseIndex+1)%(len(self.phases)-1)
+            self.phase = self.phases[self.phaseIndex]
 
     def draw(self,canvas):
         x0,x1 = self.cx - self.r, self.cx + self.r
-        y0,y1 = self.cy - self.r, self.cy + self.r
+        y0,y1 = self.cy - self.r, self.cy + self.r  
         canvas.create_oval(x0,y0,x1,y1,fill=self.color)
         for thisCrater in self.craters: #draw discolored craters
             x0,x1 = self.cx + thisCrater.x - thisCrater.r, self.cx + thisCrater.x + thisCrater.r
             y0,y1 = self.cy + thisCrater.y - thisCrater.r, self.cy + thisCrater.y + thisCrater.r
             canvas.create_oval(x0,y0,x1,y1,fill=thisCrater.color,outline=thisCrater.color)
+        x0,x1 = self.cx - self.r, self.cx + self.r
+        y0,y1 = self.cy - self.r, self.cy + self.r
+
+        
+        P1,P2 = self.phase[0],self.phase[1]
+        canvas.create_arc(x0+P1,y0,x1-P1,y1,fill="black",style=CHORD,extent=180,start=90,outline="black")
+        canvas.create_arc(x0+P2,y0,x1-P2,y1,fill="black",style=CHORD,extent=180,start=270,outline="black")
 
 class crater(object): #craters that appear on the moon surface
     def __init__(self):
@@ -255,6 +270,8 @@ def keyPressed(event, data):
         data.fireworkRate = max(30,data.fireworkRate-2)
     elif key == "Down": 
         data.fireworkRate = min(70,data.fireworkRate+2)
+    elif key == "c":
+        data.moon.phase = random.choice(data.moon.phases)
 
 def timerFired(data):
 
@@ -276,7 +293,6 @@ def timerFired(data):
 
     #chance at spawning firework 
     if data.timer % data.fireworkRate == 0:
-        print(data.fireworkRate)
         if random.randint(0,1) == 0:
             data.fireworks.add(createFirework(data))
 
